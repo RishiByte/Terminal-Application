@@ -1,0 +1,20 @@
+{
+  "name": "rail-ai",
+  "version": "1.0.0",
+  "description": "AI-powered Railway Complaint Intelligence System",
+  "main": "src/index.js",
+  "bin": {
+    "rail-ai": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": [
+    "railway",
+    "ai",
+    "complaints",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT"
+}
