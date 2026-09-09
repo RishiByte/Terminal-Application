@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { readData, writeData } = require('../utils/storage');
+const { analyzeComplaint } = require('./aiService');
 
 const COMPLAINTS_FILE = 'complaints.json';
 
@@ -7,7 +8,7 @@ function generateId() {
     return 'CMP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
 }
 
-function createComplaint(data) {
+async function createComplaint(data) {
     if (!data.complainantName) throw new Error("Complainant name is required.");
     if (!data.trainNumber) throw new Error("Train number/name is required.");
     if (!data.coach) throw new Error("Coach is required.");
@@ -15,6 +16,7 @@ function createComplaint(data) {
     if (!data.description) throw new Error("Complaint description is required.");
 
     const complaints = readData(COMPLAINTS_FILE);
+    const analysis = await analyzeComplaint(data.description);
     
     const newComplaint = {
         id: generateId(),
@@ -30,10 +32,13 @@ function createComplaint(data) {
         description: data.description,
         imagePath: data.imagePath || null,
         videoPath: data.videoPath || null,
-        // AI fields to be populated later
-        category: null,
-        priority: null,
-        assignedDepartment: null
+        category: analysis.category,
+        priority: analysis.priority,
+        sentiment: analysis.sentiment,
+        department: analysis.department,
+        assignedDepartment: analysis.department,
+        reason: analysis.reason,
+        aiAnalysis: analysis
     };
 
     complaints.push(newComplaint);

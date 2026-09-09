@@ -19,7 +19,7 @@ function registerComplaintCommand(program) {
         .option('--seat <seat>', 'Seat number')
         .option('--image <path>', 'Optional image path')
         .option('--video <path>', 'Optional video path')
-        .action((options) => {
+        .action(async (options) => {
             try {
                 const complaintData = {
                     complainantName: options.name,
@@ -35,7 +35,7 @@ function registerComplaintCommand(program) {
                     timestamp: new Date().toISOString()
                 };
 
-                const complaint = createComplaint(complaintData);
+                const complaint = await createComplaint(complaintData);
                 printConfirmation(complaint);
             } catch (error) {
                 showError(error.message);
