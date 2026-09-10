@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { readData, writeData } = require('../utils/storage');
 const { analyzeComplaint, analyzeImage } = require('./aiService');
+const { createIncidentFromComplaint } = require('./incidentService');
 
 const COMPLAINTS_FILE = 'complaints.json';
 const departments = {
@@ -62,6 +63,7 @@ async function createComplaint(data) {
     complaints.push(newComplaint);
     
     if (writeData(COMPLAINTS_FILE, complaints)) {
+        createIncidentFromComplaint(newComplaint);
         return newComplaint;
     } else {
         throw new Error("Failed to save complaint to storage.");
