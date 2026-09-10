@@ -13,19 +13,40 @@ async function analyzeImage(imagePath) {
 	if (!fs.existsSync(imagePath)) throw new Error('Image file not found.');
 
 	const file = fs.statSync(imagePath);
-	const fileInfo = {
+	const image = fs.readFileSync(imagePath);
+	const extension = path.extname(imagePath).toLowerCase();
+	const metadata = {
 		filename: path.basename(imagePath),
-		extension: path.extname(imagePath),
-		fileSize: file.size
+		fileType: extension.slice(1) || 'unknown',
+		fileSize: file.size,
+		width: null,
+		height: null
 	};
+
+	if (extension === '.png' && image.toString('hex', 0, 8) === '89504e470d0a1a0a') {
+		metadata.width = image.readUInt32BE(16);
+		metadata.height = image.readUInt32BE(20);
+	}
+	if (extension === '.jpg' || extension === '.jpeg') {
+		for (let offset = 2; offset < image.length - 9;) {
+			if (image[offset] !== 0xff) break;
+			const marker = image[offset + 1];
+			const length = image.readUInt16BE(offset + 2);
+			if (marker >= 0xc0 && marker <= 0xc3) {
+				metadata.height = image.readUInt16BE(offset + 5);
+				metadata.width = image.readUInt16BE(offset + 7);
+				break;
+			}
+			offset += length + 2;
+		}
+	}
 
 	const apiUrl = process.env.AI_API_URL || 'https://api.openai.com/v1/chat/completions';
 	if (!process.env.AI_API_KEY || !apiUrl.includes('openai.com')) {
-		return { issue: 'Image AI not available', severity: 'UNKNOWN', text: '', ...fileInfo };
+		return { metadata, text: '', issue: 'Image OCR unavailable' };
 	}
 
 	try {
-		const image = fs.readFileSync(imagePath).toString('base64');
 		const response = await fetch(apiUrl, {
 			method: 'POST',
 			headers: {
@@ -38,8 +59,8 @@ async function analyzeImage(imagePath) {
 				messages: [{
 					role: 'user',
 					content: [
-						{ type: 'text', text: 'Return only JSON with keys issue, severity, and text. Identify the likely issue, severity, and any visible text in this image.' },
-						{ type: 'image_url', image_url: { url: `data:image/${fileInfo.extension.slice(1)};base64,${image}` } }
+						{ type: 'text', text: 'Return only JSON with keys issue and text. Identify the likely issue and transcribe any visible text in this image.' },
+						{ type: 'image_url', image_url: { url: `data:image/${metadata.fileType};base64,${image.toString('base64')}` } }
 					]
 				}]
 			})
@@ -47,9 +68,9 @@ async function analyzeImage(imagePath) {
 
 		if (!response.ok) throw new Error('Image AI request failed');
 		const result = await response.json();
-		return { ...JSON.parse(result.choices[0].message.content), ...fileInfo };
+		return { metadata, ...JSON.parse(result.choices[0].message.content) };
 	} catch (error) {
-		return { issue: 'Image analysis unavailable', severity: 'UNKNOWN', text: '', ...fileInfo };
+		return { metadata, text: '', issue: 'Image OCR unavailable' };
 	}
 }
 
