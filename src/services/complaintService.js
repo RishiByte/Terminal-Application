@@ -3,6 +3,19 @@ const { readData, writeData } = require('../utils/storage');
 const { analyzeComplaint } = require('./aiService');
 
 const COMPLAINTS_FILE = 'complaints.json';
+const departments = {
+    Cleanliness: 'Housekeeping',
+    Electrical: 'Electrical',
+    Security: 'Security',
+    Medical: 'Medical',
+    Catering: 'Catering',
+    Ticketing: 'Customer Service',
+    Other: 'Customer Service'
+};
+
+function getDepartment(category) {
+    return departments[category] || departments.Other;
+}
 
 function generateId() {
     return 'CMP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
@@ -17,6 +30,8 @@ async function createComplaint(data) {
 
     const complaints = readData(COMPLAINTS_FILE);
     const analysis = await analyzeComplaint(data.description);
+    const escalated = analysis.priority === 'CRITICAL';
+    const department = escalated ? 'Control Room' : getDepartment(analysis.category);
     
     const newComplaint = {
         id: generateId(),
@@ -35,8 +50,9 @@ async function createComplaint(data) {
         category: analysis.category,
         priority: analysis.priority,
         sentiment: analysis.sentiment,
-        department: analysis.department,
-        assignedDepartment: analysis.department,
+        department,
+        assignedDepartment: department,
+        escalated,
         reason: analysis.reason,
         aiAnalysis: analysis
     };
@@ -77,6 +93,7 @@ function updateComplaintStatus(id, status) {
 
 module.exports = {
     createComplaint,
+    getDepartment,
     getComplaints,
     getComplaintById,
     updateComplaintStatus
