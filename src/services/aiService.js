@@ -9,6 +9,42 @@ const fallbackAnalysis = {
 	reason: 'AI analysis was unavailable'
 };
 
+const assistantFallback = {
+	category: 'Other',
+	priority: 'MEDIUM',
+	department: 'Customer Service',
+	suggestedResponse: 'We have registered your complaint and will review it shortly.'
+};
+
+async function analyzeAssistant(description) {
+	try {
+		if (!process.env.AI_API_KEY) return assistantFallback;
+
+		const response = await fetch(process.env.AI_API_URL || 'https://api.openai.com/v1/chat/completions', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${process.env.AI_API_KEY}`
+			},
+			body: JSON.stringify({
+				model: process.env.AI_MODEL || 'gpt-4o-mini',
+				temperature: 0,
+				response_format: { type: 'json_object' },
+				messages: [{
+					role: 'user',
+					content: `Analyze this railway complaint and return only JSON with keys category, priority, department, suggestedResponse. Keep the response short. Complaint: ${description}`
+				}]
+			})
+		});
+
+		if (!response.ok) throw new Error('AI request failed');
+		const result = await response.json();
+		return JSON.parse(result.choices[0].message.content);
+	} catch (error) {
+		return assistantFallback;
+	}
+}
+
 async function analyzeImage(imagePath) {
 	if (!fs.existsSync(imagePath)) throw new Error('Image file not found.');
 
@@ -103,4 +139,4 @@ async function analyzeComplaint(description) {
 	}
 }
 
-module.exports = { analyzeComplaint, analyzeImage };
+module.exports = { analyzeComplaint, analyzeAssistant, analyzeImage };

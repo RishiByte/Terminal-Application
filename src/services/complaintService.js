@@ -30,7 +30,7 @@ async function createComplaint(data) {
     if (!data.description) throw new Error("Complaint description is required.");
 
     const complaints = readData(COMPLAINTS_FILE);
-    const analysis = await analyzeComplaint(data.description);
+    const analysis = data.analysis || await analyzeComplaint(data.description);
     const imageAnalysis = data.imagePath ? await analyzeImage(data.imagePath) : null;
     const escalated = analysis.priority === 'CRITICAL';
     const department = escalated ? 'Control Room' : getDepartment(analysis.category);
@@ -57,6 +57,7 @@ async function createComplaint(data) {
         assignedDepartment: department,
         escalated,
         reason: analysis.reason,
+        suggestedResponse: analysis.suggestedResponse || null,
         aiAnalysis: analysis
     };
 

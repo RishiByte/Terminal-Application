@@ -4,6 +4,7 @@ const { Command } = require('commander');
 const registerComplaintCommand = require('./commands/complaint');
 const registerIncidentCommand = require('./commands/incident');
 const registerAnalyticsCommand = require('./commands/analytics');
+const registerChatCommand = require('./commands/chat');
 const pkg = require('../package.json');
 
 const program = new Command();
@@ -17,5 +18,11 @@ program
 registerComplaintCommand(program);
 registerIncidentCommand(program);
 registerAnalyticsCommand(program);
+registerChatCommand(program);
+
+program
+    .command('exit')
+    .description('Exit the application')
+    .action(() => console.log('Goodbye.'));
 
 program.parse(process.argv);

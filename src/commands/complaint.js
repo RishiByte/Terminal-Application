@@ -1,4 +1,5 @@
 const { createComplaint, getComplaints, getComplaintById, updateComplaintStatus } = require('../services/complaintService');
+const { analyzeImage } = require('../services/aiService');
 const { showError, showSuccess, printConfirmation, printComplaintDetails, printComplaintList } = require('../utils/display');
 
 function registerComplaintCommand(program) {
@@ -49,6 +50,17 @@ function registerComplaintCommand(program) {
             try {
                 const complaints = getComplaints();
                 printComplaintList(complaints);
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+
+    complaintCmd
+        .command('image <path>')
+        .description('Analyze complaint image evidence')
+        .action(async (imagePath) => {
+            try {
+                console.log(JSON.stringify(await analyzeImage(imagePath), null, 2));
             } catch (error) {
                 showError(error.message);
             }
