@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { readData, writeData } = require('../utils/storage');
-const { analyzeComplaint } = require('./aiService');
+const { analyzeComplaint, analyzeImage } = require('./aiService');
 
 const COMPLAINTS_FILE = 'complaints.json';
 const departments = {
@@ -30,6 +30,7 @@ async function createComplaint(data) {
 
     const complaints = readData(COMPLAINTS_FILE);
     const analysis = await analyzeComplaint(data.description);
+    const imageAnalysis = data.imagePath ? await analyzeImage(data.imagePath) : null;
     const escalated = analysis.priority === 'CRITICAL';
     const department = escalated ? 'Control Room' : getDepartment(analysis.category);
     
@@ -47,6 +48,7 @@ async function createComplaint(data) {
         description: data.description,
         imagePath: data.imagePath || null,
         videoPath: data.videoPath || null,
+        imageAnalysis,
         category: analysis.category,
         priority: analysis.priority,
         sentiment: analysis.sentiment,
