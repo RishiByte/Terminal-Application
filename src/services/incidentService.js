@@ -9,7 +9,9 @@ function generateId() {
 }
 
 function createIncident(data) {
-	if (!data.category) throw new Error('Incident category is required.');
+	if (!data.category) {
+		throw new Error('Incident category is required.');
+	}
 
 	const incidents = readData(INCIDENTS_FILE);
 	const incident = {
@@ -30,14 +32,24 @@ function createIncident(data) {
 function createIncidentFromComplaint(complaint) {
 	const complaints = readData(COMPLAINTS_FILE);
 	const categoryComplaints = complaints.filter(item => item.category === complaint.category);
-	const shouldCreate = complaint.priority === 'CRITICAL' || categoryComplaints.length >= 3;
-	if (!shouldCreate) return null;
+	const isCritical = complaint.priority === 'CRITICAL';
+	const hasRepeatedCategory = categoryComplaints.length >= 3;
+	if (!isCritical && !hasRepeatedCategory) {
+		return null;
+	}
 
 	const incidents = readData(INCIDENTS_FILE);
-	const existing = incidents.find(incident => incident.category === complaint.category && incident.status !== 'CLOSED');
+	const existing = incidents.find(incident => {
+		return incident.category === complaint.category && incident.status !== 'CLOSED';
+	});
 	if (existing) {
-		if (!existing.complaintIds.includes(complaint.id)) existing.complaintIds.push(complaint.id);
-		if (complaint.priority === 'CRITICAL') existing.priority = 'CRITICAL';
+		const complaintAlreadyLinked = existing.complaintIds.includes(complaint.id);
+		if (!complaintAlreadyLinked) {
+			existing.complaintIds.push(complaint.id);
+		}
+		if (isCritical) {
+			existing.priority = 'CRITICAL';
+		}
 		writeData(INCIDENTS_FILE, incidents);
 		return existing;
 	}
@@ -56,14 +68,18 @@ function getIncidents() {
 
 function getIncidentById(id) {
 	const incident = getIncidents().find(item => item.id === id);
-	if (!incident) throw new Error(`Incident with ID ${id} not found.`);
+	if (!incident) {
+		throw new Error(`Incident with ID ${id} not found.`);
+	}
 	return incident;
 }
 
 function updateIncidentStatus(id, status) {
 	const incidents = getIncidents();
 	const incident = incidents.find(item => item.id === id);
-	if (!incident) throw new Error(`Incident with ID ${id} not found.`);
+	if (!incident) {
+		throw new Error(`Incident with ID ${id} not found.`);
+	}
 	incident.status = status;
 	if (!writeData(INCIDENTS_FILE, incidents)) throw new Error('Failed to update incident.');
 	return incident;

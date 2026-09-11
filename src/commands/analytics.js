@@ -2,11 +2,15 @@ const chalk = require('chalk');
 const { readData } = require('../utils/storage');
 
 function countBy(complaints, field, fallback) {
-	return complaints.reduce((counts, complaint) => {
+	const counts = {};
+
+	complaints.forEach(complaint => {
 		const value = complaint[field] || fallback;
-		counts[value] = (counts[value] || 0) + 1;
-		return counts;
-	}, {});
+		if (!counts[value]) counts[value] = 0;
+		counts[value] += 1;
+	});
+
+	return counts;
 }
 
 function printCounts(title, counts) {

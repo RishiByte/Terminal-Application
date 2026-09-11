@@ -58,8 +58,8 @@ function printComplaintList(complaints) {
     }
     console.log('\n' + chalk.bold.blue('ID            | Status     | Train | Coach | Name'));
     console.log(chalk.gray('─────────────────────────────────────────────────────────────'));
-    complaints.forEach(c => {
-        console.log(`${c.id.padEnd(13)} | ${c.status.padEnd(10)} | ${c.trainNumber.padEnd(5)} | ${c.coach.padEnd(5)} | ${c.complainantName}`);
+    complaints.forEach(complaint => {
+        console.log(`${complaint.id.padEnd(13)} | ${complaint.status.padEnd(10)} | ${complaint.trainNumber.padEnd(5)} | ${complaint.coach.padEnd(5)} | ${complaint.complainantName}`);
     });
     console.log('');
 }

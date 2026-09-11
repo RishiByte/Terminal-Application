@@ -22,12 +22,16 @@ function generateId() {
     return 'CMP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
 }
 
+function validateComplaint(data) {
+    if (!data.complainantName) throw new Error('Complainant name is required.');
+    if (!data.trainNumber) throw new Error('Train number/name is required.');
+    if (!data.coach) throw new Error('Coach is required.');
+    if (!data.station) throw new Error('Station/location is required.');
+    if (!data.description) throw new Error('Complaint description is required.');
+}
+
 async function createComplaint(data) {
-    if (!data.complainantName) throw new Error("Complainant name is required.");
-    if (!data.trainNumber) throw new Error("Train number/name is required.");
-    if (!data.coach) throw new Error("Coach is required.");
-    if (!data.station) throw new Error("Station/location is required.");
-    if (!data.description) throw new Error("Complaint description is required.");
+    validateComplaint(data);
 
     const complaints = readData(COMPLAINTS_FILE);
     const analysis = data.analysis || await analyzeComplaint(data.description);
@@ -63,12 +67,13 @@ async function createComplaint(data) {
 
     complaints.push(newComplaint);
     
-    if (writeData(COMPLAINTS_FILE, complaints)) {
-        createIncidentFromComplaint(newComplaint);
-        return newComplaint;
-    } else {
-        throw new Error("Failed to save complaint to storage.");
+    const saved = writeData(COMPLAINTS_FILE, complaints);
+    if (!saved) {
+        throw new Error('Failed to save complaint to storage.');
     }
+
+    createIncidentFromComplaint(newComplaint);
+    return newComplaint;
 }
 
 function getComplaints() {
@@ -77,7 +82,7 @@ function getComplaints() {
 
 function getComplaintById(id) {
     const complaints = readData(COMPLAINTS_FILE);
-    const complaint = complaints.find(c => c.id === id);
+    const complaint = complaints.find(item => item.id === id);
     if (!complaint) throw new Error(`Complaint with ID ${id} not found.`);
     return complaint;
 }
@@ -89,11 +94,12 @@ function updateComplaintStatus(id, status) {
     
     complaints[index].status = status;
     
-    if (writeData(COMPLAINTS_FILE, complaints)) {
-        return complaints[index];
-    } else {
-        throw new Error("Failed to update complaint status in storage.");
+    const saved = writeData(COMPLAINTS_FILE, complaints);
+    if (!saved) {
+        throw new Error('Failed to update complaint status in storage.');
     }
+
+    return complaints[index];
 }
 
 module.exports = {
